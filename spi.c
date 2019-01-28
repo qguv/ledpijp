@@ -1,3 +1,9 @@
+/* based heavily on the following resources:
+ *
+ * https://raspberry-projects.com/pi/programming-in-c/spi/using-the-spi-interface
+ * http://hertaville.com/interfacing-an-spi-adc-mcp3008-chip-to-the-raspberry-pi-using-c.html
+ */
+
 #include <fcntl.h>		/* open */
 #include <linux/spi/spidev.h>	/* SPI_ constants */
 #include <stdint.h>		/* uint8_t */
