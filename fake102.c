@@ -15,7 +15,7 @@ static char *html_footer = "</body></html>";
 
 int fake_blit(uint8_t *spi_data, int frames)
 {
-	int fd = open("/tmp/fake102.html", O_WRONLY | O_CREAT);
+	int fd = open("/tmp/fake102.html", O_WRONLY | O_CREAT, 0644);
 	dprintf(fd, html_header);
 
 	for (int f = 0; f < frames; f++) {
