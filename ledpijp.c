@@ -25,6 +25,9 @@ static void send_frame(int sig, siginfo_t *si, void *uc)
 	(void) si;
 	(void) uc;
 
+	if (doomed)
+		return;
+
 	static int frame = 0;
 	spi_err = led_blit(frames[frame], 1);
 	if (spi_err)
