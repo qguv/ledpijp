@@ -35,7 +35,14 @@ int spi_open_port(int spi_device)
 	*spi_cs_fd = open(spi_device ? "/dev/spidev0.1" : "/dev/spidev0.0", O_WRONLY);
 
 	if (*spi_cs_fd < 0) {
-		perror("couldn't open SPI device. you need to be root or own this device. have you enabled SPI in raspi-config?");
+		perror("couldn't open spi device");
+		puts(
+			"\nsome suggestions:"
+			"\n- you need to have an spi device on your system (raspi has one built-in)"
+			"\n- you need to run this as root or own the spi device"
+			"\n- you need to enable spi in raspi-config or similar"
+			"\n- you need a linux kernel build that includes spi support (raspian does)"
+		);
 		return 1;
 	}
 

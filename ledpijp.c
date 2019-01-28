@@ -72,7 +72,7 @@ int main(void)
 	err = sigaction(SIGRTMIN, &sa, NULL);
 	if (err == -1) {
 		led_teardown();
-		perror("couldn't register timer handler"); 
+		perror("couldn't register timer handler");
 		return 10;
 	}
 	printf("\r                               ");
@@ -113,7 +113,7 @@ int main(void)
 
 	printf("\rtearing down...");
 	err = led_teardown();
-	printf("\r               \r");
-	printf("<3 ledpijp loves you!\n");
+	printf("\r               ");
+	printf("\r<3 ledpijp loves you!\n");
 	return err;
 }

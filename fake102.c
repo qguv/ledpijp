@@ -7,7 +7,7 @@
 #include <unistd.h>		/* close */
 #include <stdint.h>		/* uint8_t */
 
-static char *html_header = "<!doctype html><html><head><style>body { background-color: #333; } .frame { border-color: gray; border-style: solid; border-width: 1px 1px 10px 1px; margin: 20px; display: inline-block; } .led { height: 1em; width: 0.5em; display: inline-block; }</style></head><body>";
+static char *html_header = "<!doctype html><html><head><style>body { background-color: #333; } .frame { border-color: gray; border-style: solid; border-width: 1px 1px 10px 1px; margin: 10px; display: inline-block; } .led { height: 1em; width: 0.5em; display: inline-block; }</style></head><body>";
 static char *html_frame_start = "<div class=\"frame\">";
 static char *html_led = "<div class=\"led\" style=\"background-color: #%02x%02x%02x;\"></div>";
 static char *html_frame_end = "</div><br />";

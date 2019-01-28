@@ -6,8 +6,6 @@
 #include <stdio.h>	/* DEBUG printf putchar */
 #include <string.h>	/* uint8_t */
 
-#define ABS(X) ((X) >= 0 ? (X) : -(X))
-
 int led_setup(void)
 {
 	return spi_open_port(SPI_DEVICE);
