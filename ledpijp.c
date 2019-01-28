@@ -1,5 +1,8 @@
 #include "apa102.h"
-#include "fake102.h" /* DEBUG */
+
+#ifdef DEBUG
+#include "fake102.h"
+#endif
 
 #include <signal.h>	/* signal */
 #include <stdio.h>	/* perror */
@@ -19,6 +22,7 @@ static void sigint_handler(int _)
 	doomed = 1;
 }
 
+#ifndef DEBUG
 static void send_frame(int sig, siginfo_t *si, void *uc)
 {
 	(void) sig;
@@ -35,10 +39,11 @@ static void send_frame(int sig, siginfo_t *si, void *uc)
 	else
 		frame = (frame + 1) % NUM_FRAMES;
 }
+#endif
 
 int main(void)
 {
-	int err;
+	int err = 0;
 
 	setbuf(stdout, NULL);
 
@@ -55,6 +60,12 @@ int main(void)
 		printf("\rrainbow generation aborted\n");
 		exit(0);
 	}
+
+#ifdef DEBUG
+	printf("\rwriting to /tmp/fake102.html ...");
+	fake_blit((uint8_t *) frames, NUM_FRAMES);
+	printf("\r                                ");
+#else
 
 	/* open LED file descriptors */
 	printf("\ropening spi file descriptors...");
@@ -114,6 +125,8 @@ int main(void)
 	printf("\rtearing down...");
 	err = led_teardown();
 	printf("\r               ");
+#endif
+
 	printf("\r<3 ledpijp loves you!\n");
 	return err;
 }
