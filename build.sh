@@ -1,3 +1,3 @@
 #!/bin/bash
 
-gcc -lm -Wall -Wextra -Wpedantic -Werror *.c -o ledpijp
+gcc -lm -lrt -Wall -Wextra -Wpedantic -Werror *.c -o ledpijp
