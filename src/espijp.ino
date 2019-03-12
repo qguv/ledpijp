@@ -236,6 +236,7 @@ void begin_anim()
 void cycle_anim()
 {
 	unsigned char r, g, b;
+	static double rainbow_hue = 0.0;
 
 	switch (anim) {
 
@@ -246,15 +247,17 @@ void cycle_anim()
 			begin_anim();
 		break;
 
-	case ANIM_RAINBOW:
-		hsv2rgb(frame, 1, 1, &r, &g, &b);
-		append_led(r, g, b);
-		blit_cbuf_leds();
+	case ANIM_CYCLE:
+		hsv2rgb(rainbow_hue, 1, 1, &r, &g, &b);
+		rainbow_hue += 1.0;
+		blit_solid_leds(r, g, b);
 		break;
 
-	case ANIM_CYCLE:
-		hsv2rgb(frame, 1, 1, &r, &g, &b);
-		blit_solid_leds(r, g, b);
+	case ANIM_RAINBOW:
+		hsv2rgb(rainbow_hue, 1, 1, &r, &g, &b);
+		rainbow_hue += 1.0;
+		append_led(r, g, b);
+		blit_cbuf_leds();
 		break;
 
 	default:
