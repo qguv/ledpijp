@@ -52,7 +52,7 @@ void respond_index(WiFiClient client)
 		"<html>\n"
 		"\t<head>\n"
 		"\t\t<meta charset='utf-8' />\n"
-		"\t\t<title>espijp</title>\n"
+		"\t\t<title>ledpijp</title>\n"
 		"\t\t<script>\n"
 		"\t\t\tfunction set_led(val) {\n"
 		"\t\t\t\tfetch('/' + val).then(res => {\n"
