@@ -21,16 +21,19 @@ enum animation {
 	ANIM_CYCLE,
 	ANIM_RAINBOW,
 	ANIM_NIGHT,
+	ANIM_WHITE,
 	ANIM_UNDEFINED, // must be last
 };
 
-const char * const animation_names[5] = { "off", "cycle", "rainbow", "night", "undef" };
+const char * const animation_names[6] = { "off", "cycle", "rainbow", "night", "white", "undef" };
 
 enum animation anim, new_anim;
 
 int frame;
 
 double rainbow_hue;
+
+unsigned long int next_anim_time;
 
 // rainbow strip only: circular buffer to hold LEDs as they rainbow out
 unsigned char cbuf[NUM_LEDS * 3];
@@ -227,6 +230,10 @@ void begin_anim()
 		blit_solid_leds(0x04, 0x00, 0x00);
 		break;
 
+	case ANIM_WHITE:
+		blit_solid_leds(0xff, 0xff, 0xff);
+		break;
+
 	default:
 		break;
 	}
@@ -242,6 +249,7 @@ void cycle_anim()
 	// 'static' animations should be periodically restarted
 	case ANIM_OFF:
 	case ANIM_NIGHT:
+	case ANIM_WHITE:
 		if (frame > 10000)
 			begin_anim();
 		break;
@@ -266,42 +274,8 @@ void cycle_anim()
 	frame++;
 }
 
-void setup()
+void serve(WiFiClient client)
 {
-	anim = new_anim = ANIM_RAINBOW;
-
-	pinMode(CLK_PIN, OUTPUT);
-	digitalWrite(CLK_PIN, 0);
-
-	pinMode(DATA_PIN, OUTPUT);
-	digitalWrite(DATA_PIN, 0);
-
-	WiFi.mode(WIFI_STA);
-	WiFi.begin(ssid, password);
-	while (WiFi.status() != WL_CONNECTED) {
-		blit_solid_leds(0x10, 0x10, 0x10);
-		delay(50);
-		blit_solid_leds(0, 0, 0);
-		delay(125);
-	}
-	blit_solid_leds(0, 0x10, 0);
-
-	server.begin();
-}
-
-void loop()
-{
-	if (new_anim != ANIM_UNDEFINED) {
-		anim = new_anim;
-		new_anim = ANIM_UNDEFINED;
-		begin_anim();
-	}
-
-	cycle_anim();
-
-	WiFiClient client = server.available();
-	if (!client)
-		return;
 	client.setTimeout(5000); // default is 1000
 
 	enum request_type req_type = REQUEST_UNDEFINED;
@@ -340,6 +314,54 @@ void loop()
 	default:
 		respond_not_found(client);
 		break;
+	}
+
+}
+
+void setup()
+{
+	next_anim_time = 0;
+	anim = new_anim = ANIM_RAINBOW;
+
+	pinMode(CLK_PIN, OUTPUT);
+	digitalWrite(CLK_PIN, 0);
+
+	pinMode(DATA_PIN, OUTPUT);
+	digitalWrite(DATA_PIN, 0);
+
+	WiFi.mode(WIFI_STA);
+	WiFi.begin(ssid, password);
+	while (WiFi.status() != WL_CONNECTED) {
+		blit_solid_leds(0x10, 0x10, 0x10);
+		delay(50);
+		blit_solid_leds(0, 0, 0);
+		delay(125);
+	}
+	blit_solid_leds(0, 0x10, 0);
+
+	server.begin();
+}
+
+void loop()
+{
+	unsigned long int t = millis();
+	if (t >= next_anim_time) {
+		next_anim_time = t + 7;
+
+		if (new_anim != ANIM_UNDEFINED) {
+			anim = new_anim;
+			new_anim = ANIM_UNDEFINED;
+			begin_anim();
+		} else {
+			cycle_anim();
+		}
+	}
+
+	WiFiClient client = server.available();
+	if (client) {
+		serve(client);
+	} else {
+		yield();
 	}
 
 	// client is flushed and disconnected when it goes out of scope
