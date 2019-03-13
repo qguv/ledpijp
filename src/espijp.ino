@@ -30,6 +30,8 @@ enum animation anim, new_anim;
 
 int frame;
 
+double rainbow_hue;
+
 // rainbow strip only: circular buffer to hold LEDs as they rainbow out
 unsigned char cbuf[NUM_LEDS * 3];
 int cbuf_pos;
@@ -128,20 +130,10 @@ void apa102_footer()
 	}
 }
 
-void apa102_frame(unsigned char red, unsigned char green, unsigned char blue)
+void apa102_sendbyte(unsigned char data)
 {
-	// construct it backwards to save a few cycles
-	unsigned int color = 0;
-	color |= red;
-	color <<= 8;
-	color |= green;
-	color <<= 8;
-	color |= blue;
-	color <<= 8;
-	color |= 0xff;
-
-	for (int b = 0; b < 32; b++, color >>= 1) {
-		int bit = color & 1;
+	for (int b = 0; b < 8; b++) {
+		int bit = (data >> (7 - b)) & 1;
 		digitalWrite(DATA_PIN, bit);
 		digitalWrite(CLK_PIN, 1);
 		digitalWrite(DATA_PIN, bit);
@@ -154,7 +146,10 @@ void blit_cbuf_leds()
 	apa102_header();
 	for (int i = 0; i < NUM_LEDS; i++) {
 		int red_i = ((cbuf_pos + i) % NUM_LEDS) * 3;
-		apa102_frame(cbuf[red_i], cbuf[red_i + 1], cbuf[red_i + 2]);
+		apa102_sendbyte(0xff);
+		apa102_sendbyte(cbuf[red_i + 2]);
+		apa102_sendbyte(cbuf[red_i + 1]);
+		apa102_sendbyte(cbuf[red_i]);
 	}
 	apa102_footer();
 }
@@ -162,43 +157,46 @@ void blit_cbuf_leds()
 void blit_solid_leds(unsigned char r, unsigned char g, unsigned char b)
 {
 	apa102_header();
-	for (int i = 0; i < NUM_LEDS; i++)
-		apa102_frame(r, g, b);
+	for (int i = 0; i < NUM_LEDS; i++) {
+		apa102_sendbyte(0xff);
+		apa102_sendbyte(b);
+		apa102_sendbyte(g);
+		apa102_sendbyte(r);
+	}
 	apa102_footer();
 }
 
 /* hue [0, 360), sat [0, 1], val [0, 1], rgb [0, 255] */
 static void hsv2rgb(double hue, double sat, double val, unsigned char *red, unsigned char *green, unsigned char *blue)
 {
-	hue = fmod(hue, 360);
 	double chroma = val * sat;
-	double x = chroma * (1.0 - fabs(fmod(hue / 60.0, 2) - 1.0));
+	double x = chroma * (1.0 - fabs(fmod(hue / 60.0, 2.0) - 1.0));
 	double m = val - chroma;
 
-	if (hue < 60) {
-		*red	= 0xff * (chroma + m);
-		*green	= 0xff * (x + m);
-		*blue	= 0xff * m;
-	} else if (hue < 120) {
-		*red	= 0xff * (x + m);
-		*green	= 0xff * (chroma + m);
-		*blue	= 0xff * m;
-	} else if (hue < 180) {
-		*red	= 0xff * m;
-		*green	= 0xff * (chroma + m);
-		*blue	= 0xff * (x + m);
-	} else if (hue < 240) {
-		*red	= 0xff * m;
-		*green	= 0xff * (x + m);
-		*blue	= 0xff * (chroma + m);
-	} else if (hue < 300) {
-		*red	= 0xff * (x + m);
-		*green	= 0xff * m;
-		*blue	= 0xff * (chroma + m);
+	if (hue < 60.0) {
+		*red	= 255.0 * (chroma + m);
+		*green	= 255.0 * (x + m);
+		*blue	= 255.0 * m;
+	} else if (hue < 120.0) {
+		*red	= 255.0 * (x + m);
+		*green	= 255.0 * (chroma + m);
+		*blue	= 255.0 * m;
+	} else if (hue < 180.0) {
+		*red	= 255.0 * m;
+		*green	= 255.0 * (chroma + m);
+		*blue	= 255.0 * (x + m);
+	} else if (hue < 240.0) {
+		*red	= 255.0 * m;
+		*green	= 255.0 * (x + m);
+		*blue	= 255.0 * (chroma + m);
+	} else if (hue < 300.0) {
+		*red	= 255.0 * (x + m);
+		*green	= 255.0 * m;
+		*blue	= 255.0 * (chroma + m);
 	} else {
-		*red	= 0xff * (chroma + m);
-		*green	= 0xff * m;
-		*blue	= 0xff * (x + m);
+		*red	= 255.0 * (chroma + m);
+		*green	= 255.0 * m;
+		*blue	= 255.0 * (x + m);
 	}
 }
 
@@ -218,8 +216,9 @@ void begin_anim()
 	case ANIM_RAINBOW:
 		cbuf_pos = 0;
 		unsigned char r, g, b;
-		for (; frame < NUM_LEDS; frame++) {
-			hsv2rgb(frame, 1, 1, &r, &g, &b);
+		for (int i = 0; i < NUM_LEDS; i++) {
+			hsv2rgb(rainbow_hue, 1.0, 1.0, &r, &g, &b);
+			rainbow_hue = fmod(rainbow_hue + 1.1, 360.0);
 			append_led(r, g, b);
 		}
 		break;
@@ -248,14 +247,14 @@ void cycle_anim()
 		break;
 
 	case ANIM_CYCLE:
-		hsv2rgb(rainbow_hue, 1, 1, &r, &g, &b);
-		rainbow_hue += 1.0;
+		hsv2rgb(rainbow_hue, 1.0, 1.0, &r, &g, &b);
+		rainbow_hue = fmod(rainbow_hue + 1.1, 360.0);
 		blit_solid_leds(r, g, b);
 		break;
 
 	case ANIM_RAINBOW:
-		hsv2rgb(rainbow_hue, 1, 1, &r, &g, &b);
-		rainbow_hue += 1.0;
+		hsv2rgb(rainbow_hue, 1.0, 1.0, &r, &g, &b);
+		rainbow_hue = fmod(rainbow_hue + 1.1, 360.0);
 		append_led(r, g, b);
 		blit_cbuf_leds();
 		break;
@@ -294,6 +293,7 @@ void loop()
 {
 	if (new_anim != ANIM_UNDEFINED) {
 		anim = new_anim;
+		new_anim = ANIM_UNDEFINED;
 		begin_anim();
 	}
 
