@@ -6,6 +6,7 @@
 #define NUM_LEDS 71
 #define DATA_PIN 13
 #define CLK_PIN 14
+#define MAX_BRIGHTNESS 1.0L
 
 const char *ssid = "comet compat";
 const char *password = "logicalis";
@@ -220,7 +221,7 @@ void begin_anim()
 		cbuf_pos = 0;
 		unsigned char r, g, b;
 		for (int i = 0; i < NUM_LEDS; i++) {
-			hsv2rgb(rainbow_hue, 1.0, 1.0, &r, &g, &b);
+			hsv2rgb(rainbow_hue, 1.0, MAX_BRIGHTNESS, &r, &g, &b);
 			rainbow_hue = fmod(rainbow_hue + 1.1, 360.0);
 			append_led(r, g, b);
 		}
@@ -255,13 +256,13 @@ void cycle_anim()
 		break;
 
 	case ANIM_CYCLE:
-		hsv2rgb(rainbow_hue, 1.0, 1.0, &r, &g, &b);
+		hsv2rgb(rainbow_hue, 1.0, MAX_BRIGHTNESS, &r, &g, &b);
 		rainbow_hue = fmod(rainbow_hue + 1.1, 360.0);
 		blit_solid_leds(r, g, b);
 		break;
 
 	case ANIM_RAINBOW:
-		hsv2rgb(rainbow_hue, 1.0, 1.0, &r, &g, &b);
+		hsv2rgb(rainbow_hue, 1.0, MAX_BRIGHTNESS, &r, &g, &b);
 		rainbow_hue = fmod(rainbow_hue + 1.1, 360.0);
 		append_led(r, g, b);
 		blit_cbuf_leds();
