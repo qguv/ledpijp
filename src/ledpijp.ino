@@ -243,7 +243,6 @@ void begin_anim()
 void cycle_anim()
 {
 	unsigned char r, g, b;
-	static double rainbow_hue = 0.0;
 
 	switch (anim) {
 
