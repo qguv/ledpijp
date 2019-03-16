@@ -6,6 +6,7 @@
 #define NUM_LEDS 71
 #define DATA_PIN 13
 #define CLK_PIN 14
+#define WIFI_GIVEUP 10
 #define MAX_BRIGHTNESS 1.0L
 
 const char *ssid = "comet compat";
@@ -315,7 +316,31 @@ void serve(WiFiClient client)
 		respond_not_found(client);
 		break;
 	}
+}
 
+void wifi_connecting() {
+	blit_solid_leds(0x10, 0x10, 0x10);
+	delay(50);
+	blit_solid_leds(0, 0, 0);
+	delay(125);
+}
+
+void wifi_ap() {
+	for (int i = 0; i < 10; i++) {
+		blit_solid_leds(0, 0x10, 0);
+		delay(100);
+		blit_solid_leds(0, 0, 0x10);
+		delay(100);
+	}
+	blit_solid_leds(0, 0, 0);
+	delay(500);
+}
+
+void wifi_fail() {
+	blit_solid_leds(0x10, 0, 0);
+	delay(50);
+	blit_solid_leds(0, 0, 0);
+	delay(450);
 }
 
 void setup()
@@ -331,13 +356,17 @@ void setup()
 
 	WiFi.mode(WIFI_STA);
 	WiFi.begin(ssid, password);
-	while (WiFi.status() != WL_CONNECTED) {
-		blit_solid_leds(0x10, 0x10, 0x10);
-		delay(50);
-		blit_solid_leds(0, 0, 0);
-		delay(125);
-	}
-	blit_solid_leds(0, 0x10, 0);
+	for (int i = 0; (WiFi.status() != WL_CONNECTED) && i < (WIFI_GIVEUP * 1000 / (170)); i++)
+		wifi_connecting();
+
+	// couldn't connect to network; create one instead
+	WiFi.mode(WIFI_AP);
+	boolean ok = WiFi.softAP("ledpijp", "meddling kids", 1, false, 8);
+	if (ok)
+		wifi_ap();
+	else
+		for (;;)
+			wifi_fail();
 
 	server.begin();
 }
