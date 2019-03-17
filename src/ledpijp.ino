@@ -16,10 +16,12 @@ const char *password = "logicalis";
 
 enum request_type {
 	REQUEST_INDEX,
-	REQUEST_NEW_ANIM,
-	REQUEST_BRIGHTNESS,
-	REQUEST_SPEED,
+	REQUEST_ANIM,
 	REQUEST_ANIM_QUERY,
+	REQUEST_BRIGHTNESS,
+	REQUEST_BRIGHTNESS_QUERY,
+	REQUEST_SPEED,
+	REQUEST_SPEED_QUERY,
 	REQUEST_UNDEFINED, // must be last
 };
 
@@ -71,6 +73,7 @@ void respond_index(WiFiClient client)
 		"\n\t\t\t\tfetch('/a/' + val).then(res => {"
 		"\n\t\t\t\t\tif (res.ok)"
 		"\n\t\t\t\t\t\tres.text().then(body => document.querySelector('h1').innerHTML = body);"
+		"\n\t\t\t\t\t\tupdate_params();"
 		"\n\t\t\t\t});"
 		"\n\t\t\t}"
 		"\n\t\t\tfunction set_brightness(val) {"
@@ -78,6 +81,16 @@ void respond_index(WiFiClient client)
 		"\n\t\t\t}"
 		"\n\t\t\tfunction set_speed(val) {"
 		"\n\t\t\t\tfetch('/s/' + val);"
+		"\n\t\t\t}"
+		"\n\t\t\tfunction update_params() {"
+		"\n\t\t\t\tfetch('/s').then(res => {"
+		"\n\t\t\t\t\tif (res.ok)"
+		"\n\t\t\t\t\t\tres.text().then(body => document.querySelector('#speed').value = +body);"
+		"\n\t\t\t\t});"
+		"\n\t\t\t\tfetch('/b').then(res => {"
+		"\n\t\t\t\t\tif (res.ok)"
+		"\n\t\t\t\t\t\tres.text().then(body => document.querySelector('#brightness').value = +body);"
+		"\n\t\t\t\t});"
 		"\n\t\t\t}"
 		"\n\t\t</script>"
 		"\n\t</head>"
@@ -100,13 +113,13 @@ void respond_index(WiFiClient client)
 		"\n\t\t\t<li><a href='#' onclick='set_led(\"next\")'>next</a></li>"
 		"\n\t\t</ul>"
 		"\n\t\t<label>Brightness</label>"
-		"\n\t\t<input type='range' onchange='set_brightness(this.value)' min='0' max='1' step='0.01' value='"
+		"\n\t\t<input id='brightness' type='range' onchange='set_brightness(this.value)' min='0' max='1' step='0.01' value='"
 	));
 	client.print(max_brightness);
 	client.print(F("' />"
 		"\n\t\t<br />"
 		"\n\t\t<label>Speed</label>"
-		"\n\t\t<input type='range' onchange='set_speed(this.value)' min='0' max='10' step='0.1' value='"
+		"\n\t\t<input id='speed' type='range' onchange='set_speed(this.value)' min='0' max='10' step='0.1' value='"
 	));
 	// TODO: use the correct density sliders depending on animation
 	client.print(rainbow_density);
@@ -369,6 +382,19 @@ void serve(WiFiClient client)
 	if (request.startsWith("GET / ")) {
 		req_type = REQUEST_INDEX;
 
+	} else if (request.startsWith("GET /a ")) {
+		req_type = REQUEST_ANIM_QUERY;
+
+	} else if (request.startsWith("GET /b ")) {
+		req_type = REQUEST_BRIGHTNESS_QUERY;
+
+	} else if (request.startsWith("GET /s ")) {
+		req_type = REQUEST_SPEED_QUERY;
+
+	} else if (request.startsWith("GET /b/up ")) {
+		req_type = REQUEST_BRIGHTNESS;
+		max_brightness = zero_to_one(max_brightness + 0.1L);
+
 	} else if (request.startsWith("GET /b/up ")) {
 		req_type = REQUEST_BRIGHTNESS;
 		max_brightness = zero_to_one(max_brightness + 0.1L);
@@ -431,14 +457,11 @@ void serve(WiFiClient client)
 			}
 		}
 
-	} else if (request.startsWith("GET /a ")) {
-		req_type = REQUEST_ANIM_QUERY;
-
 	} else if (request.startsWith("GET /a/")) {
 		enum animation anim_request = get_animation(request);
 		if (anim_request != ANIM_UNDEFINED) {
 			new_anim = anim_request;
-			req_type = REQUEST_NEW_ANIM;
+			req_type = REQUEST_ANIM;
 		}
 	}
 
@@ -456,15 +479,17 @@ void serve(WiFiClient client)
 		respond_anim_query(client);
 		break;
 
-	case REQUEST_NEW_ANIM:
+	case REQUEST_ANIM:
 		respond_new_anim(client);
 		break;
 
 	case REQUEST_BRIGHTNESS:
+	case REQUEST_BRIGHTNESS_QUERY:
 		respond_double(client, max_brightness);
 		break;
 
 	case REQUEST_SPEED:
+	case REQUEST_SPEED_QUERY:
 		respond_double(client, anim == ANIM_RAINBOW ? rainbow_density : anim == ANIM_CYCLE ? cycle_speed : anim == ANIM_STROBE ? strobe_speed : -1.0L);
 		break;
 
