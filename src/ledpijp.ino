@@ -19,6 +19,7 @@ const char *password = "logicalis";
 enum request_type {
 	REQUEST_INDEX,
 	REQUEST_NEW_ANIM,
+	REQUEST_ANIM_QUERY,
 	REQUEST_UNDEFINED, // must be last
 };
 
@@ -89,6 +90,12 @@ void respond_new_anim(WiFiClient client)
 {
 	client.print(F("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\n"));
 	client.print(animation_names[new_anim]);
+}
+
+void respond_anim_query(WiFiClient client)
+{
+	client.print(F("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\n"));
+	client.print(animation_names[anim]);
 }
 
 void respond_not_found(WiFiClient client)
@@ -290,6 +297,10 @@ void serve(WiFiClient client)
 
 	if (request.startsWith("GET / ")) {
 		req_type = REQUEST_INDEX;
+
+	} else if (request.startsWith("GET /a ")) {
+		req_type = REQUEST_ANIM_QUERY;
+
 	} else {
 		enum animation anim_request = get_animation(request);
 		if (anim_request != ANIM_UNDEFINED) {
@@ -306,6 +317,10 @@ void serve(WiFiClient client)
 
 	case REQUEST_INDEX:
 		respond_index(client);
+		break;
+
+	case REQUEST_ANIM_QUERY:
+		respond_anim_query(client);
 		break;
 
 	case REQUEST_NEW_ANIM:

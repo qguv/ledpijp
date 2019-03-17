@@ -16,7 +16,8 @@
 
 _patches welcome_
 
-- [ ] API route to get currently chosen animation
+- [X] API route to get currently chosen animation
+- [ ] increase and decrease brightness at runtime
 - [ ] API route to allow arbitrary solid-color switching
 - [ ] more animations
 - [ ] use the onboard SPI functionality of the ESP-8266
