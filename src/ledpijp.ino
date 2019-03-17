@@ -7,8 +7,6 @@
 #define DATA_PIN 13
 #define CLK_PIN 14
 #define WIFI_GIVEUP 10
-#define MAX_BRIGHTNESS 1.0L
-#define RAINBOW_DENSITY 3.1L
 #define ANIM_HZ 60
 
 #define HZ_TO_MS(HZ) (1000 / (HZ))
@@ -19,6 +17,8 @@ const char *password = "logicalis";
 enum request_type {
 	REQUEST_INDEX,
 	REQUEST_NEW_ANIM,
+	REQUEST_BRIGHTNESS,
+	REQUEST_SPEED,
 	REQUEST_ANIM_QUERY,
 	REQUEST_UNDEFINED, // must be last
 };
@@ -40,6 +40,10 @@ int frame;
 
 double rainbow_hue;
 
+double max_brightness = 1.0L;
+double rainbow_density = 3.1L;
+double cycle_speed = 0.5L;
+
 unsigned long int next_anim_time;
 
 // rainbow strip only: circular buffer to hold LEDs as they rainbow out
@@ -55,25 +59,33 @@ void respond_index(WiFiClient client)
 		"HTTP/1.1 200 OK\r\n"
 		"Content-Type: text/html\r\n"
 		"\r\n"
-		"<!doctype html>\n"
-		"<html>\n"
-		"\t<head>\n"
-		"\t\t<meta charset='utf-8' />\n"
-		"\t\t<title>ledpijp</title>\n"
-		"\t\t<script>\n"
-		"\t\t\tfunction set_led(val) {\n"
-		"\t\t\t\tfetch('/' + val).then(res => {\n"
-		"\t\t\t\t\tif (res.ok)\n"
-		"\t\t\t\t\t\tres.text().then(body => document.querySelector('h1').innerHTML = body);\n"
-		"\t\t\t\t});\n"
-		"\t\t\t}\n"
-		"\t\t</script>\n"
-		"\t</head>\n"
-		"\t<body>\n"
-		"\t\t<h1>\n"
+		"<!doctype html>"
+		"\n<html>"
+		"\n\t<head>"
+		"\n\t\t<meta charset='utf-8' />"
+		"\n\t\t<title>ledpijp</title>"
+		"\n\t\t<script>"
+		"\n\t\t\tfunction set_led(val) {"
+		"\n\t\t\t\tfetch('/a/' + val).then(res => {"
+		"\n\t\t\t\t\tif (res.ok)"
+		"\n\t\t\t\t\t\tres.text().then(body => document.querySelector('h1').innerHTML = body);"
+		"\n\t\t\t\t});"
+		"\n\t\t\t}"
+		"\n\t\t\tfunction set_brightness(val) {"
+		"\n\t\t\t\tfetch('/b/' + val);"
+		"\n\t\t\t}"
+		"\n\t\t\tfunction set_speed(val) {"
+		"\n\t\t\t\tfetch('/s/' + val);"
+		"\n\t\t\t}"
+		"\n\t\t</script>"
+		"\n\t</head>"
+		"\n\t<body>"
+		"\n\t\t<h1>"
 	));
 	client.print(animation_names[(int) anim]);
-	client.print(F("</h1>\n\t\t<ul>"));
+	client.print(F("</h1>"
+		"\n\t\t<ul>"
+	));
 
 	for (int i = 0; i < (int) ANIM_UNDEFINED; i++) {
 		client.print(F("\n\t\t\t<li><a href='#' onclick='set_led(\""));
@@ -82,8 +94,24 @@ void respond_index(WiFiClient client)
 		client.print(animation_names[i]);
 		client.print(F("</a></li>"));
 	}
-	client.print(F("\n\t\t\t<li><a href='#' onclick='set_led(\"next\")'>next</a></li>"));
-	client.print(F("\n\t\t</ul>\n\t</body>\n</html>"));
+	client.print(F(
+		"\n\t\t\t<li><a href='#' onclick='set_led(\"next\")'>next</a></li>"
+		"\n\t\t</ul>"
+		"\n\t\t<label>Brightness</label>"
+		"\n\t\t<input type='range' onchange='set_brightness(this.value)' min='0' max='1' step='0.01' value='"
+	));
+	client.print(max_brightness);
+	client.print(F("' />"
+		"\n\t\t<br />"
+		"\n\t\t<label>Speed</label>"
+		"\n\t\t<input type='range' onchange='set_speed(this.value)' min='0' max='10' step='0.1' value='"
+	));
+	// TODO: use the correct density sliders depending on animation
+	client.print(rainbow_density);
+	client.print(F("' />"
+		"\n\t</body>"
+		"\n</html>"
+	));
 }
 
 void respond_new_anim(WiFiClient client)
@@ -98,6 +126,12 @@ void respond_anim_query(WiFiClient client)
 	client.print(animation_names[anim]);
 }
 
+void respond_double(WiFiClient client, double x)
+{
+	client.print(F("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\n"));
+	client.print(x);
+}
+
 void respond_not_found(WiFiClient client)
 {
 	client.print(F("HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\nError 404: Not Found"));
@@ -106,11 +140,11 @@ void respond_not_found(WiFiClient client)
 // get desired animation from request
 enum animation get_animation(String request)
 {
-	if (request.startsWith("GET /next "))
+	if (request.startsWith("GET /a/next "))
 		return (enum animation) (((int) anim + 1) % (int) ANIM_UNDEFINED);
 
 	for (int i = 0; i < (int) ANIM_UNDEFINED; i++)
-		if (request.startsWith(String("GET /") + String(animation_names[i]) + String(" ")))
+		if (request.startsWith(String("GET /a/") + String(animation_names[i]) + String(" ")))
 			return (enum animation) i;
 	return ANIM_UNDEFINED;
 }
@@ -233,8 +267,8 @@ void begin_anim()
 		cbuf_pos = 0;
 		unsigned char r, g, b;
 		for (int i = 0; i < NUM_LEDS; i++) {
-			hsv2rgb(rainbow_hue, 1.0, MAX_BRIGHTNESS, &r, &g, &b);
-			rainbow_hue = fmod(rainbow_hue + RAINBOW_DENSITY, 360.0);
+			hsv2rgb(rainbow_hue, 1.0, max_brightness, &r, &g, &b);
+			rainbow_hue = fmod(rainbow_hue + rainbow_density, 360.0);
 			append_led(r, g, b);
 		}
 		break;
@@ -267,14 +301,14 @@ void cycle_anim()
 		break;
 
 	case ANIM_CYCLE:
-		hsv2rgb(rainbow_hue, 1.0, MAX_BRIGHTNESS, &r, &g, &b);
-		rainbow_hue = fmod(rainbow_hue + RAINBOW_DENSITY, 360.0);
+		hsv2rgb(rainbow_hue, 1.0, max_brightness, &r, &g, &b);
+		rainbow_hue = fmod(rainbow_hue + cycle_speed, 360.0);
 		blit_solid_leds(r, g, b);
 		break;
 
 	case ANIM_RAINBOW:
-		hsv2rgb(rainbow_hue, 1.0, MAX_BRIGHTNESS, &r, &g, &b);
-		rainbow_hue = fmod(rainbow_hue + RAINBOW_DENSITY, 360.0);
+		hsv2rgb(rainbow_hue, 1.0, max_brightness, &r, &g, &b);
+		rainbow_hue = fmod(rainbow_hue + rainbow_density, 360.0);
 		append_led(r, g, b);
 		blit_cbuf_leds();
 		break;
@@ -284,6 +318,24 @@ void cycle_anim()
 	}
 
 	frame++;
+}
+
+double above_zero(double x)
+{
+	if (x < 0.0L)
+		return 0.0L;
+	else
+		return x;
+}
+
+double zero_to_one(double x)
+{
+	if (x < 0.0L)
+		return 0.0L;
+	else if (x > 1.0L)
+		return 1.0L;
+	else
+		return x;
 }
 
 void serve(WiFiClient client)
@@ -298,10 +350,64 @@ void serve(WiFiClient client)
 	if (request.startsWith("GET / ")) {
 		req_type = REQUEST_INDEX;
 
+	} else if (request.startsWith("GET /b/up ")) {
+		req_type = REQUEST_BRIGHTNESS;
+		max_brightness = zero_to_one(max_brightness + 0.1L);
+
+	} else if (request.startsWith("GET /b/down ")) {
+		req_type = REQUEST_BRIGHTNESS;
+		max_brightness = zero_to_one(max_brightness - 0.1L);
+
+	} else if (request.startsWith("GET /s/up ")) {
+		if (anim == ANIM_RAINBOW) {
+			req_type = REQUEST_SPEED;
+			rainbow_density += 0.1L;
+		} else if (anim == ANIM_CYCLE) {
+			req_type = REQUEST_SPEED;
+			cycle_speed += 0.1L;
+		}
+
+	} else if (request.startsWith("GET /s/down ")) {
+		if (anim == ANIM_RAINBOW) {
+			req_type = REQUEST_SPEED;
+			rainbow_density = above_zero(rainbow_density - 0.1L);
+		} else if (anim == ANIM_CYCLE) {
+			req_type = REQUEST_SPEED;
+			cycle_speed = above_zero(cycle_speed - 0.1L);
+		}
+
+	} else if (request.startsWith("GET /b/")) {
+		int from = 7;
+		int to = request.indexOf(" ", from);
+		if (to != -1) {
+			// yes, invalid numbers will set brightness to zero
+			// you could do a cutsey thing and GET /b/dark but don't
+			max_brightness = zero_to_one(request.substring(from, to).toFloat());
+			req_type = REQUEST_BRIGHTNESS;
+		}
+
+	} else if (request.startsWith("GET /s/")) {
+		if (anim == ANIM_RAINBOW || anim == ANIM_CYCLE) {
+			int from = 7;
+			int to = request.indexOf(" ", from);
+			if (to != -1) {
+				// yes, invalid numbers will set speed to zero
+				// you could do a cutsey thing and GET /s/pause but don't
+				double newval = above_zero(request.substring(from, to).toFloat());
+				if (anim == ANIM_RAINBOW) {
+					rainbow_density = newval;
+				} else if (anim == ANIM_CYCLE) {
+					cycle_speed = newval;
+				}
+
+				req_type = REQUEST_SPEED;
+			}
+		}
+
 	} else if (request.startsWith("GET /a ")) {
 		req_type = REQUEST_ANIM_QUERY;
 
-	} else {
+	} else if (request.startsWith("GET /a/")) {
 		enum animation anim_request = get_animation(request);
 		if (anim_request != ANIM_UNDEFINED) {
 			new_anim = anim_request;
@@ -325,6 +431,14 @@ void serve(WiFiClient client)
 
 	case REQUEST_NEW_ANIM:
 		respond_new_anim(client);
+		break;
+
+	case REQUEST_BRIGHTNESS:
+		respond_double(client, max_brightness);
+		break;
+
+	case REQUEST_SPEED:
+		respond_double(client, anim == ANIM_RAINBOW ? rainbow_density : anim == ANIM_CYCLE ? cycle_speed : -1.0L);
 		break;
 
 	case REQUEST_UNDEFINED:

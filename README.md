@@ -17,7 +17,9 @@
 _patches welcome_
 
 - [X] API route to get currently chosen animation
-- [ ] increase and decrease brightness at runtime
+- [X] increase and decrease brightness at runtime
+- [ ] save brightness in nvram
+- [ ] show the correct speed slider depending on animation
 - [ ] API route to allow arbitrary solid-color switching
 - [ ] more animations
 - [ ] use the onboard SPI functionality of the ESP-8266
