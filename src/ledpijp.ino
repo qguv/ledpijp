@@ -8,6 +8,10 @@
 #define CLK_PIN 14
 #define WIFI_GIVEUP 10
 #define MAX_BRIGHTNESS 1.0L
+#define RAINBOW_DENSITY 3.1L
+#define ANIM_HZ 60
+
+#define HZ_TO_MS(HZ) (1000 / (HZ))
 
 const char *ssid = "comet compat";
 const char *password = "logicalis";
@@ -223,7 +227,7 @@ void begin_anim()
 		unsigned char r, g, b;
 		for (int i = 0; i < NUM_LEDS; i++) {
 			hsv2rgb(rainbow_hue, 1.0, MAX_BRIGHTNESS, &r, &g, &b);
-			rainbow_hue = fmod(rainbow_hue + 1.1, 360.0);
+			rainbow_hue = fmod(rainbow_hue + RAINBOW_DENSITY, 360.0);
 			append_led(r, g, b);
 		}
 		break;
@@ -257,13 +261,13 @@ void cycle_anim()
 
 	case ANIM_CYCLE:
 		hsv2rgb(rainbow_hue, 1.0, MAX_BRIGHTNESS, &r, &g, &b);
-		rainbow_hue = fmod(rainbow_hue + 1.1, 360.0);
+		rainbow_hue = fmod(rainbow_hue + RAINBOW_DENSITY, 360.0);
 		blit_solid_leds(r, g, b);
 		break;
 
 	case ANIM_RAINBOW:
 		hsv2rgb(rainbow_hue, 1.0, MAX_BRIGHTNESS, &r, &g, &b);
-		rainbow_hue = fmod(rainbow_hue + 1.1, 360.0);
+		rainbow_hue = fmod(rainbow_hue + RAINBOW_DENSITY, 360.0);
 		append_led(r, g, b);
 		blit_cbuf_leds();
 		break;
@@ -379,7 +383,7 @@ void loop()
 {
 	unsigned long int t = millis();
 	if (t >= next_anim_time) {
-		next_anim_time = t + 7;
+		next_anim_time = t + HZ_TO_MS(ANIM_HZ);
 
 		if (new_anim != ANIM_UNDEFINED) {
 			anim = new_anim;
