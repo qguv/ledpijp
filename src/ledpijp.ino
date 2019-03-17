@@ -22,6 +22,7 @@ enum request_type {
 	REQUEST_BRIGHTNESS_QUERY,
 	REQUEST_SPEED,
 	REQUEST_SPEED_QUERY,
+	REQUEST_RESET,
 	REQUEST_UNDEFINED, // must be last
 };
 
@@ -42,6 +43,7 @@ enum animation anim, new_anim;
 int frame;
 double rainbow_hue;
 unsigned long int last_flash;
+bool doomed = false;
 
 double max_brightness = 1.0L;
 double rainbow_density = 3.1L;
@@ -71,25 +73,17 @@ void respond_index(WiFiClient client)
 		"\n\t\t<script>"
 		"\n\t\t\tfunction set_led(val) {"
 		"\n\t\t\t\tfetch('/a/' + val).then(res => {"
-		"\n\t\t\t\t\tif (res.ok)"
+		"\n\t\t\t\t\tif (res.ok) {"
 		"\n\t\t\t\t\t\tres.text().then(body => document.querySelector('h1').innerHTML = body);"
-		"\n\t\t\t\t\t\tupdate_params();"
-		"\n\t\t\t\t});"
-		"\n\t\t\t}"
-		"\n\t\t\tfunction set_brightness(val) {"
-		"\n\t\t\t\tfetch('/b/' + val);"
-		"\n\t\t\t}"
-		"\n\t\t\tfunction set_speed(val) {"
-		"\n\t\t\t\tfetch('/s/' + val);"
-		"\n\t\t\t}"
-		"\n\t\t\tfunction update_params() {"
-		"\n\t\t\t\tfetch('/s').then(res => {"
-		"\n\t\t\t\t\tif (res.ok)"
-		"\n\t\t\t\t\t\tres.text().then(body => document.querySelector('#speed').value = +body);"
-		"\n\t\t\t\t});"
-		"\n\t\t\t\tfetch('/b').then(res => {"
-		"\n\t\t\t\t\tif (res.ok)"
-		"\n\t\t\t\t\t\tres.text().then(body => document.querySelector('#brightness').value = +body);"
+		"\n\t\t\t\t\t\tfetch('/s').then(res => {"
+		"\n\t\t\t\t\t\t\tif (res.ok)"
+		"\n\t\t\t\t\t\t\t\tres.text().then(body => document.querySelector('#speed').value = +body);"
+		"\n\t\t\t\t\t\t});"
+		"\n\t\t\t\t\t\tfetch('/b').then(res => {"
+		"\n\t\t\t\t\t\t\tif (res.ok)"
+		"\n\t\t\t\t\t\t\t\tres.text().then(body => document.querySelector('#brightness').value = +body);"
+		"\n\t\t\t\t\t\t});"
+		"\n\t\t\t\t\t}"
 		"\n\t\t\t\t});"
 		"\n\t\t\t}"
 		"\n\t\t</script>"
@@ -113,20 +107,25 @@ void respond_index(WiFiClient client)
 		"\n\t\t\t<li><a href='#' onclick='set_led(\"next\")'>next</a></li>"
 		"\n\t\t</ul>"
 		"\n\t\t<label>Brightness</label>"
-		"\n\t\t<input id='brightness' type='range' onchange='set_brightness(this.value)' min='0' max='1' step='0.01' value='"
+		"\n\t\t<input id='brightness' type='range' onchange='fetch(\"/b/\" + this.value)' min='0' max='1' step='0.01' value='"
 	));
 	client.print(max_brightness);
 	client.print(F("' />"
 		"\n\t\t<br />"
 		"\n\t\t<label>Speed</label>"
-		"\n\t\t<input id='speed' type='range' onchange='set_speed(this.value)' min='0' max='10' step='0.1' value='"
+		"\n\t\t<input id='speed' type='range' onchange='fetch(\"/s/\" + this.value)' min='0' max='10' step='0.1' value='"
 	));
-	// TODO: use the correct density sliders depending on animation
 	client.print(rainbow_density);
 	client.print(F("' />"
+		"\n\t\t<button onclick='fetch(\"/r\")'>reset</button>"
 		"\n\t</body>"
 		"\n</html>"
 	));
+}
+
+void respond_reset(WiFiClient client)
+{
+	client.print(F("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\nbye!"));
 }
 
 void respond_new_anim(WiFiClient client)
@@ -382,6 +381,10 @@ void serve(WiFiClient client)
 	if (request.startsWith("GET / ")) {
 		req_type = REQUEST_INDEX;
 
+	} else if (request.startsWith("GET /r ")) {
+		req_type = REQUEST_RESET;
+		doomed = true;
+
 	} else if (request.startsWith("GET /a ")) {
 		req_type = REQUEST_ANIM_QUERY;
 
@@ -475,6 +478,10 @@ void serve(WiFiClient client)
 		respond_index(client);
 		break;
 
+	case REQUEST_RESET:
+		respond_reset(client);
+		break;
+
 	case REQUEST_ANIM_QUERY:
 		respond_anim_query(client);
 		break;
@@ -562,6 +569,9 @@ void setup()
 
 void loop()
 {
+	if (doomed)
+		ESP.reset();
+
 	unsigned long int t = millis();
 	if (t >= next_anim_time) {
 		next_anim_time = t + HZ_TO_MS(ANIM_HZ);
