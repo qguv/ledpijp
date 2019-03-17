@@ -127,6 +127,9 @@ void respond_index(WiFiClient client)
 		"\n\t\t</div>"
 		"\n\t\t<br />"
 		"\n\t\t<button onclick='fetch(\"/r\")'>reset ledpijp</button>"
+		"\n\t\t<br />"
+		"\n\t\t<br />"
+		"\n\t\t<a href='https://github.com/qguv/ledpijp' target='_blank'>source</a>"
 		"\n\t</body>"
 		"\n</html>"
 	));
