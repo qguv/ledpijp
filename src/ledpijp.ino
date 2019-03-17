@@ -360,13 +360,17 @@ void setup()
 		wifi_connecting();
 
 	// couldn't connect to network; create one instead
-	WiFi.mode(WIFI_AP);
-	boolean ok = WiFi.softAP("ledpijp", "meddling kids", 1, false, 8);
-	if (ok)
-		wifi_ap();
-	else
-		for (;;)
-			wifi_fail();
+	if (WiFi.status() != WL_CONNECTED) {
+		WiFi.mode(WIFI_AP);
+		boolean ok = WiFi.softAP("ledpijp", "logicalis", 1, false, 8);
+		if (ok) {
+			wifi_ap();
+		} else {
+			for (;;) {
+				wifi_fail();
+			}
+		}
+	}
 
 	server.begin();
 }
