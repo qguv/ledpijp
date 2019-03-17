@@ -18,6 +18,9 @@ _patches welcome_
 
 - [X] API route to get currently chosen animation
 - [X] increase and decrease brightness at runtime
+- [X] strobe light
+- [ ] API route to get brightness
+- [ ] API route to get speed
 - [ ] save brightness in nvram
 - [ ] show the correct speed slider depending on animation
 - [ ] API route to allow arbitrary solid-color switching

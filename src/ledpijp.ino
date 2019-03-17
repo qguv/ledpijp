@@ -25,24 +25,26 @@ enum request_type {
 
 enum animation {
 	ANIM_OFF,
-	ANIM_CYCLE,
-	ANIM_RAINBOW,
 	ANIM_NIGHT,
+	ANIM_RAINBOW,
+	ANIM_CYCLE,
+	ANIM_STROBE,
 	ANIM_WHITE,
 	ANIM_UNDEFINED, // must be last
 };
 
-const char * const animation_names[6] = { "off", "cycle", "rainbow", "night", "white", "undef" };
+const char * const animation_names[7] = { "off", "night", "rainbow", "cycle", "strobe", "white", "undef" };
 
 enum animation anim, new_anim;
 
 int frame;
-
 double rainbow_hue;
+unsigned long int last_flash;
 
 double max_brightness = 1.0L;
 double rainbow_density = 3.1L;
 double cycle_speed = 0.5L;
+double strobe_speed = 1.0L;
 
 unsigned long int next_anim_time;
 
@@ -260,6 +262,7 @@ void begin_anim()
 		blit_solid_leds(0x00, 0x00, 0x00);
 		break;
 
+	case ANIM_STROBE:
 	case ANIM_CYCLE:
 		break;
 
@@ -289,6 +292,8 @@ void begin_anim()
 void cycle_anim()
 {
 	unsigned char r, g, b;
+	unsigned long int t;
+	unsigned char brt;
 
 	switch (anim) {
 
@@ -311,6 +316,20 @@ void cycle_anim()
 		rainbow_hue = fmod(rainbow_hue + rainbow_density, 360.0);
 		append_led(r, g, b);
 		blit_cbuf_leds();
+		break;
+
+	case ANIM_STROBE:
+		t = millis();
+		brt = 0xff * max_brightness;
+		// strobe speed is half the frequency in Hz, e.g. 10.0 is 20 Hz strobe
+		if (t - last_flash > 500 / strobe_speed) {
+			last_flash = t;
+			blit_solid_leds(brt, brt, brt);
+		} else if (t - last_flash > 10) {
+			blit_solid_leds(0, 0, 0);
+		} else {
+			blit_solid_leds(brt, brt, brt);
+		}
 		break;
 
 	default:
@@ -365,6 +384,9 @@ void serve(WiFiClient client)
 		} else if (anim == ANIM_CYCLE) {
 			req_type = REQUEST_SPEED;
 			cycle_speed += 0.1L;
+		} else if (anim == ANIM_STROBE) {
+			req_type = REQUEST_SPEED;
+			strobe_speed += 0.1L;
 		}
 
 	} else if (request.startsWith("GET /s/down ")) {
@@ -374,6 +396,9 @@ void serve(WiFiClient client)
 		} else if (anim == ANIM_CYCLE) {
 			req_type = REQUEST_SPEED;
 			cycle_speed = above_zero(cycle_speed - 0.1L);
+		} else if (anim == ANIM_STROBE) {
+			req_type = REQUEST_SPEED;
+			strobe_speed = above_zero(strobe_speed - 0.1L);
 		}
 
 	} else if (request.startsWith("GET /b/")) {
@@ -387,7 +412,7 @@ void serve(WiFiClient client)
 		}
 
 	} else if (request.startsWith("GET /s/")) {
-		if (anim == ANIM_RAINBOW || anim == ANIM_CYCLE) {
+		if (anim == ANIM_RAINBOW || anim == ANIM_CYCLE || anim == ANIM_STROBE) {
 			int from = 7;
 			int to = request.indexOf(" ", from);
 			if (to != -1) {
@@ -398,6 +423,8 @@ void serve(WiFiClient client)
 					rainbow_density = newval;
 				} else if (anim == ANIM_CYCLE) {
 					cycle_speed = newval;
+				} else if (anim == ANIM_STROBE) {
+					strobe_speed = newval;
 				}
 
 				req_type = REQUEST_SPEED;
@@ -438,7 +465,7 @@ void serve(WiFiClient client)
 		break;
 
 	case REQUEST_SPEED:
-		respond_double(client, anim == ANIM_RAINBOW ? rainbow_density : anim == ANIM_CYCLE ? cycle_speed : -1.0L);
+		respond_double(client, anim == ANIM_RAINBOW ? rainbow_density : anim == ANIM_CYCLE ? cycle_speed : anim == ANIM_STROBE ? strobe_speed : -1.0L);
 		break;
 
 	case REQUEST_UNDEFINED:
