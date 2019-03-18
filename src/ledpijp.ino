@@ -43,6 +43,7 @@ enum animation anim, new_anim;
 int frame;
 double rainbow_hue;
 unsigned long int last_flash;
+bool server_pending = true;
 bool doomed = false;
 
 double max_brightness = 1.0L;
@@ -522,13 +523,6 @@ void serve(WiFiClient client)
 	}
 }
 
-void wifi_connecting() {
-	blit_solid_leds(0x10, 0x10, 0x10);
-	delay(50);
-	blit_solid_leds(0, 0, 0);
-	delay(125);
-}
-
 void wifi_ap() {
 	for (int i = 0; i < 10; i++) {
 		blit_solid_leds(0, 0x10, 0);
@@ -541,10 +535,12 @@ void wifi_ap() {
 }
 
 void wifi_fail() {
-	blit_solid_leds(0x10, 0, 0);
-	delay(50);
-	blit_solid_leds(0, 0, 0);
-	delay(450);
+	for (int i = 0; i < 4; i++) {
+		blit_solid_leds(0x10, 0, 0);
+		delay(50);
+		blit_solid_leds(0, 0, 0);
+		delay(450);
+	}
 }
 
 void setup()
@@ -560,23 +556,6 @@ void setup()
 
 	WiFi.mode(WIFI_STA);
 	WiFi.begin(ssid, password);
-	for (int i = 0; (WiFi.status() != WL_CONNECTED) && i < (WIFI_GIVEUP * 1000 / (170)); i++)
-		wifi_connecting();
-
-	// couldn't connect to network; create one instead
-	if (WiFi.status() != WL_CONNECTED) {
-		WiFi.mode(WIFI_AP);
-		boolean ok = WiFi.softAP("ledpijp", "logicalis", 1, false, 8);
-		if (ok) {
-			wifi_ap();
-		} else {
-			for (;;) {
-				wifi_fail();
-			}
-		}
-	}
-
-	server.begin();
 }
 
 void loop()
@@ -585,6 +564,22 @@ void loop()
 		blit_solid_leds(0, 0, 0);
 		ESP.reset();
 		for (;;);
+	}
+
+	if (server_pending) {
+		if (WiFi.status() == WL_CONNECTED) {
+			server_pending = false;
+			server.begin();
+		} else if (millis() > WIFI_GIVEUP * 1000) {
+			server_pending = false;
+			WiFi.mode(WIFI_AP);
+			if (WiFi.softAP("ledpijp", "logicalis", 1, false, 8)) {
+				server.begin();
+				wifi_ap();
+			} else {
+				wifi_fail();
+			}
+		}
 	}
 
 	unsigned long int t = millis();

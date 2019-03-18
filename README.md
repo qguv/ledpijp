@@ -23,7 +23,7 @@ _patches welcome_
 - [X] API route to get speed
 - [X] show the correct speed slider depending on animation
 - [X] fix reset button
-- [ ] start animation immediately, don't wait for internet
+- [X] start animation immediately, don't wait for internet
 - [ ] save last animation in nvram
 - [ ] save brightness in nvram
 - [ ] save speed in nvram
