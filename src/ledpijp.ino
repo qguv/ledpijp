@@ -581,8 +581,11 @@ void setup()
 
 void loop()
 {
-	if (doomed)
+	if (doomed) {
+		blit_solid_leds(0, 0, 0);
 		ESP.reset();
+		for (;;);
+	}
 
 	unsigned long int t = millis();
 	if (t >= next_anim_time) {

@@ -22,9 +22,12 @@ _patches welcome_
 - [X] API route to get brightness
 - [X] API route to get speed
 - [X] show the correct speed slider depending on animation
-- [ ] reset button
+- [X] fix reset button
+- [ ] start animation immediately, don't wait for internet
+- [ ] save last animation in nvram
 - [ ] save brightness in nvram
-- [ ] API route to allow arbitrary solid-color switching (use cycle, slow it down, then slow it to zero when it's where you want)
+- [ ] save speed in nvram
+- [ ] API route to allow arbitrary solid-color switching (for now, this is possible by using cycle mode, slowing it down, then slowing it to zero when it's showing the color you want)
 - [ ] more animations
 - [ ] use the onboard (H)SPI functionality of the ESP-8266
 - [ ] use NTP syncing to switch animations depending on time of day
