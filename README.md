@@ -2,6 +2,8 @@
 
 71 APA-102 LEDs mounted in a hornbach fixture, driven by an esp-8266
 
+my implementation of [ledspace](https://revspace.nl/Ledspace) but with a faster-booting controller board
+
 ## interacting
 
 - visit the IP of the ESP-8266 in a browser
@@ -24,6 +26,7 @@ _patches welcome_
 - [X] show the correct speed slider depending on animation
 - [X] fix reset button
 - [X] start animation immediately, don't wait for internet
+- [ ] rainbow density=0 should freeze rainbow, not fade to a solid color
 - [ ] save last animation in nvram
 - [ ] save brightness in nvram
 - [ ] save speed in nvram
