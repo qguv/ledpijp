@@ -573,7 +573,7 @@ void loop()
 		} else if (millis() > WIFI_GIVEUP * 1000) {
 			server_pending = false;
 			WiFi.mode(WIFI_AP);
-			if (WiFi.softAP("ledpijp", "logicalis", 1, false, 8)) {
+			if (WiFi.softAP("ledpijp", password, 1, false, 8)) {
 				server.begin();
 				wifi_ap();
 			} else {
