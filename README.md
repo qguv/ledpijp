@@ -4,7 +4,14 @@
 
 my implementation of [ledspace](https://revspace.nl/Ledspace) but with a faster-booting controller board
 
-## interacting
+## wifi
+
+- tries to connect to the ap credentials defined in code
+- if it can't connect within 10 seconds`*` since boot, it will flash blue and green, then create a network with the name ledpijp and the password defined in code from the original access point
+
+`*` 10-second time limit is configurable in code as `WIFI-GIVEUP`
+
+## interaction
 
 - visit the IP of the ESP-8266 in a browser
 - select the animation you want
@@ -12,7 +19,7 @@ my implementation of [ledspace](https://revspace.nl/Ledspace) but with a faster-
 
 ## specs
 
-- tries to approximate 144 Hz refresh rate
+- tries to approximate 60 Hz refresh rate
 
 ## todo
 
