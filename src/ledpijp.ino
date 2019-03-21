@@ -411,10 +411,6 @@ void serve(WiFiClient client)
 		req_type = REQUEST_BRIGHTNESS;
 		max_brightness = zero_to_one(max_brightness + 0.1L);
 
-	} else if (request.startsWith("GET /b/up ")) {
-		req_type = REQUEST_BRIGHTNESS;
-		max_brightness = zero_to_one(max_brightness + 0.1L);
-
 	} else if (request.startsWith("GET /b/down ")) {
 		req_type = REQUEST_BRIGHTNESS;
 		max_brightness = zero_to_one(max_brightness - 0.1L);
