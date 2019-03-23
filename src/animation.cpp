@@ -76,7 +76,7 @@ void begin_anim(void)
 		for (int i = 0; i < NUM_LEDS; i++) {
 			hsv2rgb(rainbow_hue, 1.0, max_brightness, &r, &g, &b);
 			rainbow_hue = fmod(rainbow_hue + rainbow_density, 360.0);
-			append_led(r, g, b);
+			append_led(gamma8[r], gamma8[g], gamma8[b]);
 		}
 		break;
 
@@ -85,7 +85,7 @@ void begin_anim(void)
 		break;
 
 	case ANIM_WHITE:
-		blit_solid_leds(0xff * max_brightness, 0xff * max_brightness, 0xff * max_brightness);
+		blit_solid_leds(gamma8[(int) (0xff * max_brightness)], gamma8[(int) (0xff * max_brightness)], gamma8[(int) (0xff * max_brightness)]);
 		break;
 
 	default:
@@ -114,19 +114,19 @@ void cycle_anim(void)
 	case ANIM_CYCLE:
 		hsv2rgb(rainbow_hue, 1.0, max_brightness, &r, &g, &b);
 		rainbow_hue = fmod(rainbow_hue + cycle_speed, 360.0);
-		blit_solid_leds(r, g, b);
+		blit_solid_leds(gamma8[r], gamma8[g], gamma8[b]);
 		break;
 
 	case ANIM_RAINBOW:
 		hsv2rgb(rainbow_hue, 1.0, max_brightness, &r, &g, &b);
 		rainbow_hue = fmod(rainbow_hue + rainbow_density, 360.0);
-		append_led(r, g, b);
+		append_led(gamma8[r], gamma8[g], gamma8[b]);
 		blit_cbuf_leds(cbuf, cbuf_pos);
 		break;
 
 	case ANIM_STROBE:
 		t = millis();
-		brt = 0xff * max_brightness;
+		brt = gamma8[(int) (0xff * max_brightness)];
 
 		/* strobe speed is half the frequency in Hz, e.g. 10.0 is 20 Hz strobe */
 		if (t - last_flash > 500 / strobe_speed) {
