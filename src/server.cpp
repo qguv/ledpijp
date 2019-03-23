@@ -240,7 +240,7 @@ void respond_index(WiFiClient client)
 		"\n\t\t\t<li><a href='#' onclick='set_led(\"next\")'>next</a></li>"
 		"\n\t\t</ul>"
 		"\n\t\t<label>Brightness</label>"
-		"\n\t\t<input id='brightness' type='range' onchange='fetch(\"/b/\" + this.value)' min='0' max='1' step='0.01' value='"
+		"\n\t\t<input id='brightness' type='range' onchange='fetch(\"/b/\" + this.value)' min='0.1' max='1' step='0.01' value='"
 	));
 	client.print(max_brightness);
 	client.print(F("' />"
