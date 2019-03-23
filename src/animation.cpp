@@ -85,7 +85,7 @@ void begin_anim(void)
 		break;
 
 	case ANIM_WHITE:
-		blit_solid_leds(0xff, 0xff, 0xff);
+		blit_solid_leds(0xff * max_brightness, 0xff * max_brightness, 0xff * max_brightness);
 		break;
 
 	default:
