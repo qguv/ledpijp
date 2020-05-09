@@ -268,7 +268,11 @@ void respond_index(WiFiClient client)
 		"\n\t\t\t<label>Brightness</label>"
 		"\n\t\t\t<input id='brightness' type='range' onchange='fetch(\"/b/\" + Math.pow(10, this.value))' min='-2' max='0' step='0.1' value='"
 	));
-	client.print(max_brightness);
+	if (max_brightness > 0) {
+		client.print(log10(max_brightness));
+	} else {
+		client.print("-2");
+	}
 	client.print(F("' />"
 		"\n\t\t</div>"
 		"\n\t\t<br />"
@@ -276,7 +280,15 @@ void respond_index(WiFiClient client)
 		"\n\t\t\t<label>Speed</label>"
 		"\n\t\t\t<input id='speed' type='range' onchange='fetch(\"/s/\" + Math.pow(10, this.value))' min='-1' max='1' step='0.1' value='"
 	));
-	client.print(rainbow_density);
+	if (anim == ANIM_RAINBOW && rainbow_density > 0) {
+		client.print(log10(rainbow_density));
+	} else if (anim == ANIM_CYCLE && cycle_speed > 0) {
+		client.print(log10(cycle_speed));
+	} else if (anim == ANIM_STROBE && strobe_speed > 0) {
+		client.print(log10(strobe_speed));
+	} else {
+		client.print("-1");
+	}
 	client.print(F("' />"
 		"\n\t\t</div>"
 		"\n\t\t<br />"
