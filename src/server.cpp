@@ -240,14 +240,14 @@ void respond_index(WiFiClient client)
 		"\n\t\t\t<li><a href='#' onclick='set_led(\"next\")'>next</a></li>"
 		"\n\t\t</ul>"
 		"\n\t\t<label>Brightness</label>"
-		"\n\t\t<input id='brightness' type='range' onchange='fetch(\"/b/\" + this.value)' min='0.1' max='1' step='0.01' value='"
+		"\n\t\t<input id='brightness' type='range' onchange='fetch(\"/b/\" + Math.pow(10, this.value))' min='-2' max='0' step='0.1' value='"
 	));
 	client.print(max_brightness);
 	client.print(F("' />"
 		"\n\t\t<br />"
 		"\n\t\t<div id='speed-container'>"
 		"\n\t\t\t<label>Speed</label>"
-		"\n\t\t\t<input id='speed' type='range' onchange='fetch(\"/s/\" + this.value)' min='0' max='10' step='0.1' value='"
+		"\n\t\t\t<input id='speed' type='range' onchange='fetch(\"/s/\" + Math.pow(10, this.value))' min='-1' max='1' step='0.1' value='"
 	));
 	client.print(rainbow_density);
 	client.print(F("' />"
