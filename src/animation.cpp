@@ -10,6 +10,9 @@ static double rainbow_hue;
 static unsigned char cbuf[NUM_LEDS * 3];
 static int cbuf_pos;
 
+/* bounce state */
+static int bounce_pos;
+
 /* strobe state */
 static unsigned long int last_flash;
 
@@ -17,7 +20,7 @@ static unsigned long int last_flash;
 static unsigned long int anim_start;
 
 /* shared globals */
-const char * const animation_names[7] = { "off", "night", "rainbow", "cycle", "strobe", "white", "undef" };
+const char * const animation_names[8] = { "off", "night", "rainbow", "bounce", "cycle", "strobe", "white", "undef" };
 enum animation anim = ANIM_RAINBOW;
 enum animation new_anim = ANIM_UNDEFINED;
 double max_brightness = 1.0L;
@@ -58,12 +61,26 @@ void wifi_fail(void)
 	}
 }
 
+static void bouncer(int i, unsigned char *r, unsigned char *g, unsigned char *b)
+{
+	if (i == bounce_pos || 2*NUM_LEDS - i - 1 == bounce_pos) {
+		*r = *g = *b = 0xff;
+	} else {
+		*r = *g = *b = 0;
+	}
+}
+
 void begin_anim(void)
 {
 	switch (anim) {
 
 	case ANIM_OFF:
 		blit_solid_leds(0x00, 0x00, 0x00);
+		break;
+
+	case ANIM_BOUNCE:
+		blit_solid_leds(0x00, 0x00, 0x00);
+		bounce_pos = 0;
 		break;
 
 	case ANIM_STROBE:
@@ -122,6 +139,12 @@ void cycle_anim(void)
 		rainbow_hue = fmod(rainbow_hue + rainbow_density, 360.0);
 		append_led(gamma8[r], gamma8[g], gamma8[b]);
 		blit_cbuf_leds(cbuf, cbuf_pos);
+		break;
+
+	case ANIM_BOUNCE:
+		blit_leds_func(bouncer);
+		bounce_pos++;
+		bounce_pos %= NUM_LEDS * 2;
 		break;
 
 	case ANIM_STROBE:

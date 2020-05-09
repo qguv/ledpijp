@@ -1,9 +1,12 @@
 #pragma once
 
+// if you add an animation here, you must also add one in the animation_names
+// array in animation.cpp and update the array length here accordingly
 enum animation {
 	ANIM_OFF,
 	ANIM_NIGHT,
 	ANIM_RAINBOW,
+	ANIM_BOUNCE,
 	ANIM_CYCLE,
 	ANIM_STROBE,
 	ANIM_WHITE,
@@ -11,7 +14,7 @@ enum animation {
 };
 
 
-extern const char * const animation_names[7];
+extern const char * const animation_names[8];
 extern enum animation anim, new_anim;
 extern double max_brightness;
 extern double rainbow_density;

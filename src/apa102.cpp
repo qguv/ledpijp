@@ -57,3 +57,17 @@ void blit_solid_leds(unsigned char r, unsigned char g, unsigned char b)
 	}
 	footer();
 }
+
+void blit_leds_func(void (*fn)(int i, unsigned char *r, unsigned char *g, unsigned char *b))
+{
+	unsigned char r, g, b;
+	header();
+	for (int i = 0; i < NUM_LEDS; i++) {
+		fn(i, &r, &g, &b);
+		sendbyte(0xff);
+		sendbyte(b);
+		sendbyte(g);
+		sendbyte(r);
+	}
+	footer();
+}
