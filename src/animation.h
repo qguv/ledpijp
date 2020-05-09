@@ -5,6 +5,7 @@
 enum animation {
 	ANIM_OFF,
 	ANIM_NIGHT,
+	ANIM_MORNING,
 	ANIM_RAINBOW,
 	ANIM_BOUNCE,
 	ANIM_CYCLE,
@@ -14,7 +15,7 @@ enum animation {
 };
 
 
-extern const char * const animation_names[8];
+extern const char * const animation_names[9];
 extern enum animation anim, new_anim;
 extern double max_brightness;
 extern double rainbow_density;

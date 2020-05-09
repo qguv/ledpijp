@@ -20,7 +20,7 @@ static unsigned long int last_flash;
 static unsigned long int anim_start;
 
 /* shared globals */
-const char * const animation_names[8] = { "off", "night", "rainbow", "bounce", "cycle", "strobe", "white", "undef" };
+const char * const animation_names[9] = { "off", "night", "morning", "rainbow", "bounce", "cycle", "strobe", "white", "undef" };
 enum animation anim = ANIM_RAINBOW;
 enum animation new_anim = ANIM_UNDEFINED;
 double max_brightness = 1.0L;
@@ -101,6 +101,10 @@ void begin_anim(void)
 		blit_solid_leds(0x04, 0x00, 0x00);
 		break;
 
+	case ANIM_MORNING:
+		blit_solid_leds(0x00, 0x00, 0xff);
+		break;
+
 	case ANIM_WHITE:
 		blit_solid_leds(gamma8[(int) (0xff * max_brightness)], gamma8[(int) (0xff * max_brightness)], gamma8[(int) (0xff * max_brightness)]);
 		break;
@@ -123,6 +127,7 @@ void cycle_anim(void)
 	/* 'static' animations should be periodically restarted */
 	case ANIM_OFF:
 	case ANIM_NIGHT:
+	case ANIM_MORNING:
 	case ANIM_WHITE:
 		if (anim_start + 60000 >= millis())
 			begin_anim();
