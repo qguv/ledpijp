@@ -165,7 +165,12 @@ enum request_type serve(WiFiClient client)
 
 	case REQUEST_BRIGHTNESS:
 	case REQUEST_BRIGHTNESS_QUERY:
-		respond_double(client, max_brightness);
+		respond_double(
+			client,
+			anim == ANIM_OFF || anim == ANIM_NIGHT || anim == ANIM_MORNING || anim == ANIM_BOUNCE
+				? -1.0L
+				: max_brightness,
+		);
 		break;
 
 	case REQUEST_SPEED:
@@ -210,8 +215,22 @@ void respond_index(WiFiClient client)
 		"\n\t\t\t\t\t\t\t\t\tif (body === '-1.00') {"
 		"\n\t\t\t\t\t\t\t\t\t\tspeed_container.hidden = true;"
 		"\n\t\t\t\t\t\t\t\t\t} else {"
-		"\n\t\t\t\t\t\t\t\t\t\tspeed.value = +body;"
+		"\n\t\t\t\t\t\t\t\t\t\tspeed.value = Math.log10(body);"
 		"\n\t\t\t\t\t\t\t\t\t\tspeed_container.hidden = false;"
+		"\n\t\t\t\t\t\t\t\t\t}"
+		"\n\t\t\t\t\t\t\t\t});"
+		"\n\t\t\t\t\t\t\t}"
+		"\n\t\t\t\t\t\t});"
+		"\n\t\t\t\t\t\tfetch('/b').then(res => {"
+		"\n\t\t\t\t\t\t\tif (res.ok) {"
+		"\n\t\t\t\t\t\t\t\tres.text().then(body => {"
+		"\n\t\t\t\t\t\t\t\t\tconst brightness = document.querySelector('#brightness');"
+		"\n\t\t\t\t\t\t\t\t\tconst brightness_container = document.querySelector('#brightness-container');"
+		"\n\t\t\t\t\t\t\t\t\tif (body === '-1.00') {"
+		"\n\t\t\t\t\t\t\t\t\t\tbrightness_container.hidden = true;"
+		"\n\t\t\t\t\t\t\t\t\t} else {"
+		"\n\t\t\t\t\t\t\t\t\t\tbrightness.value = Math.log10(body);"
+		"\n\t\t\t\t\t\t\t\t\t\tbrightness_container.hidden = false;"
 		"\n\t\t\t\t\t\t\t\t\t}"
 		"\n\t\t\t\t\t\t\t\t});"
 		"\n\t\t\t\t\t\t\t}"
@@ -239,11 +258,13 @@ void respond_index(WiFiClient client)
 	client.print(F(
 		"\n\t\t\t<li><a href='#' onclick='set_led(\"next\")'>next</a></li>"
 		"\n\t\t</ul>"
-		"\n\t\t<label>Brightness</label>"
-		"\n\t\t<input id='brightness' type='range' onchange='fetch(\"/b/\" + Math.pow(10, this.value))' min='-2' max='0' step='0.1' value='"
+		"\n\t\t<div id='brightness-container'>"
+		"\n\t\t\t<label>Brightness</label>"
+		"\n\t\t\t<input id='brightness' type='range' onchange='fetch(\"/b/\" + Math.pow(10, this.value))' min='-2' max='0' step='0.1' value='"
 	));
 	client.print(max_brightness);
 	client.print(F("' />"
+		"\n\t\t</div>"
 		"\n\t\t<br />"
 		"\n\t\t<div id='speed-container'>"
 		"\n\t\t\t<label>Speed</label>"
