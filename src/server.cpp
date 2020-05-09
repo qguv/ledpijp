@@ -169,7 +169,7 @@ enum request_type serve(WiFiClient client)
 			client,
 			anim == ANIM_OFF || anim == ANIM_NIGHT || anim == ANIM_MORNING || anim == ANIM_BOUNCE
 				? -1.0L
-				: max_brightness,
+				: max_brightness
 		);
 		break;
 
