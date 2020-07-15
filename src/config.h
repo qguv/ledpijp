@@ -7,7 +7,7 @@
  * few LEDs will float. If the strip is shorter than this, there are no visual
  * consequences. Controls the size of internal buffers and the length of many
  * loops. */
-#define NUM_LEDS 71
+#define NUM_LEDS 16
 
 /* hardware gpio pins for bitbanging, in Arduino notation NOT NODEMCU NOTATION
  *
